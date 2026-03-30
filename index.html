@@ -181,19 +181,21 @@ function processMessage(i) {
         return "Does your business sell products or offer services? (type 'product' or 'service')";
     }
     
+    // BUSINESS TYPE - CHOOSE ONE PATH
     if (step === "businessType") {
         if (i === 'product') {
             customerData.businessType = 'product';
             step = "products";
-            return "List your products with prices. Format: ProductName:Price. Type each product, then type 'done' when finished. If no products, type 'none'.";
+            return "Great! List your products with prices. Format: ProductName:Price. Type each product, then type 'done' when finished. If no products, type 'none'.";
         } else if (i === 'service') {
             customerData.businessType = 'service';
             step = "services";
-            return "List your services. Type each service, then type 'done' when finished. If no services, type 'none'.";
+            return "Great! List your services. Type each service, then type 'done' when finished. If no services, type 'none'.";
         }
         return "Please type 'product' or 'service'.";
     }
     
+    // PRODUCTS PATH (only if businessType = product)
     if (step === "products") {
         if (i === 'done' || i === 'none') {
             if (tempProducts.length === 0 && i === 'none') {
@@ -206,6 +208,7 @@ function processMessage(i) {
         return `Added "${i}". Add another product or type 'done'.`;
     }
     
+    // SERVICES PATH (only if businessType = service)
     if (step === "services") {
         if (i === 'done' || i === 'none') {
             if (tempServices.length === 0 && i === 'none') {
@@ -218,6 +221,7 @@ function processMessage(i) {
         return `Added "${i}". Add another service or type 'done'.`;
     }
     
+    // EXTRA EMAILS
     if (step === "extraEmails") {
         if (i === 'skip' || i === 'done') {
             step = "payment";
@@ -227,6 +231,7 @@ function processMessage(i) {
         return `Added "${i}". Add another email or type 'done'.`;
     }
     
+    // PAYMENT
     if (step === "payment" && (i === 'yes' || i === 'y')) {
         // Save all data
         const allData = {
@@ -236,7 +241,9 @@ function processMessage(i) {
             extraEmails: tempEmails
         };
         localStorage.setItem('avaCustomerData', JSON.stringify(allData));
-        return "🎉 Perfect! Here's your payment link: nAfter payment, your custom script will be emailed to " + customerData.email + ".\n\nThank you for choosing https://buy.stripe.com/3cI9AUgyv7rF1jr2rVabK1b
+        return "🎉 Perfect! Here's your payment link: https://buy.stripe.com/3cI9AUgyv7rF1jr2rVabK1b\n\nAfter payment, your custom script will be emailed to " + customerData.email + ".\n\nThank you for choosing Ava! 💜";
+    }
+    
     return "Type 'start over' to begin again, or ask me about the software!";
 }
 
