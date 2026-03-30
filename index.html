@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Ava AI</title>
+    <title>Ava AI - Your Assistant</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;}
@@ -48,29 +48,216 @@
     </div>
 </div>
 <script>
-let step="greeting",customerData={firstName:null,lastName:null,email:null,businessName:null,industry:null,emailRate:null,phone:null,businessType:null},tempProducts=[],tempServices=[],tempEmails=[],recognition=null,isRecording=false;
-if('webkitSpeechRecognition' in window){recognition=new webkitSpeechRecognition();recognition.lang='en-US';recognition.onresult=function(e){document.getElementById('userInput').value=e.results[0][0].transcript;sendMessage();};recognition.onend=function(){document.getElementById('micBtn').classList.remove('recording');document.getElementById('micBtn').innerHTML='<i class="fas fa-microphone"></i>';isRecording=false;};}
-function startVoiceInput(){if(!recognition){alert("Voice not supported");return;}if(isRecording){recognition.stop();return;}recognition.start();document.getElementById('micBtn').classList.add('recording');document.getElementById('micBtn').innerHTML='<i class="fas fa-microphone-slash"></i>';isRecording=true;}
-function addMessage(text,isUser){let m=document.getElementById('messages');let d=document.createElement('div');d.className='message '+(isUser?'user':'bot');d.innerHTML='<div class="message-content">'+text+'</div>';m.appendChild(d);m.scrollTop=m.scrollHeight;}
-function showTyping(){let m=document.getElementById('messages');let t=document.createElement('div');t.className='message bot';t.id='typing';t.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';m.appendChild(t);m.scrollTop=m.scrollHeight;}
-function hideTyping(){let t=document.getElementById('typing');if(t)t.remove();}
-function sendMessage(){let inp=document.getElementById('userInput');let msg=inp.value.trim();if(!msg)return;addMessage(msg,true);inp.value='';showTyping();setTimeout(()=>{hideTyping();addMessage(processMessage(msg.toLowerCase()),false);},500);}
-function processMessage(i){if(i.includes('start over')){reset();return"Let's start over! What's your first name?";}
-if(step==="greeting"){customerData.firstName=i;step="lastName";return"Thank you! What's your last name?";}
-if(step==="lastName"){customerData.lastName=i;step="email";return"What's your email address?";}
-if(step==="email"){if(i.includes('@')&&i.includes('.')){customerData.email=i;step="businessName";return"What's your business name?";}return"Please enter a valid email.";}
-if(step==="businessName"){customerData.businessName=i;step="industry";return"What industry? (E-commerce, Healthcare, Education, Retail, SaaS, Consulting)";}
-if(step==="industry"){customerData.industry=i;step="emailRate";return"What's your email sending rate? (e.g., '10 per hour')";}
-if(step==="emailRate"){customerData.emailRate=i;step="phone";return"Phone number? (or type 'skip')";}
-if(step==="phone"){if(i!=='skip')customerData.phone=i;step="businessType";return"Products or services? (type 'product' or 'service')";}
-if(step==="businessType"){if(i==='product'||i==='service'){customerData.businessType=i;step=i==='product'?"products":"services";return i==='product'?"List products with prices (Name:Price). Type 'done' when finished.":"List services. Type 'done' when finished.";}return"Type 'product' or 'service'.";}
-if(step==="products"){if(i==='done'){step="extraEmails";return"Any extra emails? (type 'skip' if none)";}tempProducts.push(i);return"Added. Add another or type 'done'.";}
-if(step==="services"){if(i==='done'){step="extraEmails";return"Any extra emails? (type 'skip' if none)";}tempServices.push(i);return"Added. Add another or type 'done'.";}
-if(step==="extraEmails"){if(i==='skip'||i==='done'){step="payment";return"Ready to pay £99? Type 'yes' for payment link.";}tempEmails.push(i);return"Added. Add another or type 'done'.";}
-if(step==="payment"&&(i==='yes'||i==='y')){localStorage.setItem('avaData',JSON.stringify({...customerData,products:tempProducts,services:tempServices,extraEmails:tempEmails}));return"🎉 Payment link: https://buy.stripe.com/your-link-here\n\nYour custom script will be emailed to you. Thank you! 💜";}
-return"Type 'start over' to begin again, or ask me about the software!";}
-function reset(){step="greeting";customerData={firstName:null,lastName:null,email:null,businessName:null,industry:null,emailRate:null,phone:null,businessType:null};tempProducts=[];tempServices=[];tempEmails=[];document.getElementById('messages').innerHTML='';addMessage("Hello! I'm Ava. I can help you purchase our AI agent software for £99. What's your first name?",false);}
-document.getElementById('sendBtn').onclick=sendMessage;document.getElementById('micBtn').onclick=startVoiceInput;
+let step = "greeting";
+let customerData = {
+    firstName: null, lastName: null, email: null, businessName: null,
+    industry: null, emailRate: null, phone: null, businessType: null
+};
+let tempProducts = [];
+let tempServices = [];
+let tempEmails = [];
+let recognition = null;
+let isRecording = false;
+
+// Initialize voice recognition
+if ('webkitSpeechRecognition' in window) {
+    recognition = new webkitSpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.onresult = function(e) {
+        document.getElementById('userInput').value = e.results[0][0].transcript;
+        sendMessage();
+    };
+    recognition.onend = function() {
+        document.getElementById('micBtn').classList.remove('recording');
+        document.getElementById('micBtn').innerHTML = '<i class="fas fa-microphone"></i>';
+        isRecording = false;
+    };
+}
+
+function startVoiceInput() {
+    if (!recognition) { alert("Voice not supported on this device"); return; }
+    if (isRecording) { recognition.stop(); return; }
+    recognition.start();
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micBtn').innerHTML = '<i class="fas fa-microphone-slash"></i>';
+    isRecording = true;
+}
+
+function addMessage(text, isUser) {
+    let m = document.getElementById('messages');
+    let d = document.createElement('div');
+    d.className = 'message ' + (isUser ? 'user' : 'bot');
+    d.innerHTML = '<div class="message-content">' + text + '</div>';
+    m.appendChild(d);
+    m.scrollTop = m.scrollHeight;
+}
+
+function showTyping() {
+    let m = document.getElementById('messages');
+    let t = document.createElement('div');
+    t.className = 'message bot';
+    t.id = 'typing';
+    t.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    m.appendChild(t);
+    m.scrollTop = m.scrollHeight;
+}
+
+function hideTyping() {
+    let t = document.getElementById('typing');
+    if (t) t.remove();
+}
+
+function sendMessage() {
+    let inp = document.getElementById('userInput');
+    let msg = inp.value.trim();
+    if (!msg) return;
+    addMessage(msg, true);
+    inp.value = '';
+    showTyping();
+    setTimeout(() => {
+        hideTyping();
+        addMessage(processMessage(msg.toLowerCase()), false);
+    }, 500);
+}
+
+function processMessage(i) {
+    // Reset command
+    if (i.includes('start over')) {
+        reset();
+        return "Let's start over! What's your first name?";
+    }
+    
+    // FAQ
+    if (i.includes('what is') || i.includes('how much') || i.includes('features')) {
+        return "Our AI agent is a Python script that automates customer service, handles emails, scrapes leads, and generates tickets. One-time payment of £99, no subscription. Type 'yes' to buy!";
+    }
+    
+    // Main conversation flow
+    if (step === "greeting") {
+        customerData.firstName = i;
+        step = "lastName";
+        return "Thank you! What's your last name?";
+    }
+    
+    if (step === "lastName") {
+        customerData.lastName = i;
+        step = "email";
+        return "What's your email address?";
+    }
+    
+    if (step === "email") {
+        if (i.includes('@') && i.includes('.')) {
+            customerData.email = i;
+            step = "businessName";
+            return "What's your business name?";
+        }
+        return "Please enter a valid email address (like name@company.com).";
+    }
+    
+    if (step === "businessName") {
+        customerData.businessName = i;
+        step = "industry";
+        return "What industry? (E-commerce, Healthcare, Education, Retail, SaaS, Consulting, or Other)";
+    }
+    
+    if (step === "industry") {
+        customerData.industry = i;
+        step = "emailRate";
+        return "What's your email sending rate? Example: '10 per hour', '200 per day', or '5 per minute'";
+    }
+    
+    if (step === "emailRate") {
+        if (/\d/.test(i) && (i.includes('hour') || i.includes('day') || i.includes('minute'))) {
+            customerData.emailRate = i;
+            step = "phone";
+            return "Phone number? (or type 'skip')";
+        }
+        return "Please specify with a number and unit. Example: '50 per day' or '10 per hour'";
+    }
+    
+    if (step === "phone") {
+        if (i !== 'skip') customerData.phone = i;
+        step = "businessType";
+        return "Does your business sell products or offer services? (type 'product' or 'service')";
+    }
+    
+    if (step === "businessType") {
+        if (i === 'product') {
+            customerData.businessType = 'product';
+            step = "products";
+            return "List your products with prices. Format: ProductName:Price. Type each product, then type 'done' when finished. If no products, type 'none'.";
+        } else if (i === 'service') {
+            customerData.businessType = 'service';
+            step = "services";
+            return "List your services. Type each service, then type 'done' when finished. If no services, type 'none'.";
+        }
+        return "Please type 'product' or 'service'.";
+    }
+    
+    if (step === "products") {
+        if (i === 'done' || i === 'none') {
+            if (tempProducts.length === 0 && i === 'none') {
+                addMessage("No products added. That's fine!", false);
+            }
+            step = "extraEmails";
+            return "Any additional email addresses for your campaign? Type them one per line, or type 'skip' if none.";
+        }
+        tempProducts.push(i);
+        return `Added "${i}". Add another product or type 'done'.`;
+    }
+    
+    if (step === "services") {
+        if (i === 'done' || i === 'none') {
+            if (tempServices.length === 0 && i === 'none') {
+                addMessage("No services added. That's fine!", false);
+            }
+            step = "extraEmails";
+            return "Any additional email addresses for your campaign? Type them one per line, or type 'skip' if none.";
+        }
+        tempServices.push(i);
+        return `Added "${i}". Add another service or type 'done'.`;
+    }
+    
+    if (step === "extraEmails") {
+        if (i === 'skip' || i === 'done') {
+            step = "payment";
+            return "Ready to pay £99 for your custom AI agent? Type 'yes' for the payment link.";
+        }
+        tempEmails.push(i);
+        return `Added "${i}". Add another email or type 'done'.`;
+    }
+    
+    if (step === "payment" && (i === 'yes' || i === 'y')) {
+        // Save all data
+        const allData = {
+            ...customerData,
+            products: tempProducts,
+            services: tempServices,
+            extraEmails: tempEmails
+        };
+        localStorage.setItem('avaCustomerData', JSON.stringify(allData));
+        return "🎉 Perfect! Here's your payment link: https://buy.stripe.com/your-link-here\n\nAfter payment, your custom script will be emailed to " + customerData.email + ".\n\nThank you for choosing Ava! 💜";
+    }
+    
+    return "Type 'start over' to begin again, or ask me about the software!";
+}
+
+function reset() {
+    step = "greeting";
+    customerData = {
+        firstName: null, lastName: null, email: null, businessName: null,
+        industry: null, emailRate: null, phone: null, businessType: null
+    };
+    tempProducts = [];
+    tempServices = [];
+    tempEmails = [];
+    document.getElementById('messages').innerHTML = '';
+    addMessage("Hello! I'm Ava. I can help you purchase our AI agent software for £99. What's your first name?", false);
+}
+
+// Event listeners
+document.getElementById('sendBtn').onclick = sendMessage;
+document.getElementById('micBtn').onclick = startVoiceInput;
 </script>
 </body>
 </html>
