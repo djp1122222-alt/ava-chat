@@ -26,7 +26,7 @@
         .input-area{padding:16px 20px;background:white;border-top:1px solid #E2E8F0;display:flex;gap:10px;}
         .input-area input{flex:1;padding:12px 16px;border:2px solid #E2E8F0;border-radius:25px;font-size:15px;outline:none;}
         .input-area input:focus{border-color:#6B46C1;}
-        .mic-btn,.send-btn{width:44px;height:44px;border-radius:50%;border:none;font-size:18px;}
+        .mic-btn,.send-btn{width:44px;height:44px;border-radius:50%;border:none;font-size:18px;cursor:pointer;}
         .mic-btn{background:#F7FAFC;border:2px solid #E2E8F0;color:#6B46C1;}
         .send-btn{background:#6B46C1;color:white;}
         .recording{background:#FC8181;color:white;}
@@ -42,12 +42,21 @@
         <div class="message bot"><div class="message-content">Hello! I'm Ava. I can help you purchase our AI agent software for £99. What's your first name?</div></div>
     </div>
     <div class="input-area">
-        <button class="mic-btn" id="micBtn"><i class="fas fa-microphone"></i></button>
+        <button class="mic-btn" id="micBtn" onclick="startVoiceInput()"><i class="fas fa-microphone"></i></button>
         <input type="text" id="userInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter')sendMessage()">
-        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
     </div>
 </div>
 <script>
+// =============================================
+// CONFIGURATION
+// =============================================
+const YOUR_EMAIL = "djp11122222@gmail.com";  // Where to send chat logs
+const STRIPE_LINK = "https://buy.stripe.com/3cI9AUgyv7rF1jr2rVabK1b";
+
+// =============================================
+// CHAT STATE
+// =============================================
 let step = "greeting";
 let customerData = {
     firstName: null, lastName: null, email: null, businessName: null,
@@ -56,10 +65,14 @@ let customerData = {
 let tempProducts = [];
 let tempServices = [];
 let tempEmails = [];
+let conversationLog = [];  // Stores all messages for email
+
 let recognition = null;
 let isRecording = false;
 
-// Initialize voice recognition
+// =============================================
+// VOICE RECOGNITION
+// =============================================
 if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.lang = 'en-US';
@@ -83,6 +96,9 @@ function startVoiceInput() {
     isRecording = true;
 }
 
+// =============================================
+// CHAT FUNCTIONS
+// =============================================
 function addMessage(text, isUser) {
     let m = document.getElementById('messages');
     let d = document.createElement('div');
@@ -90,6 +106,13 @@ function addMessage(text, isUser) {
     d.innerHTML = '<div class="message-content">' + text + '</div>';
     m.appendChild(d);
     m.scrollTop = m.scrollHeight;
+    
+    // Log message
+    conversationLog.push({
+        speaker: isUser ? "Customer" : "Ava",
+        message: text,
+        timestamp: new Date().toISOString()
+    });
 }
 
 function showTyping() {
@@ -116,23 +139,73 @@ function sendMessage() {
     showTyping();
     setTimeout(() => {
         hideTyping();
-        addMessage(processMessage(msg.toLowerCase()), false);
+        let reply = processMessage(msg.toLowerCase());
+        addMessage(reply, false);
     }, 500);
 }
 
+// =============================================
+// SEND EMAIL WITH CHAT LOG
+// =============================================
+function sendChatLog() {
+    // Format conversation for email
+    let logText = "NEW AI AGENT PURCHASE\n";
+    logText += "=".repeat(50) + "\n";
+    logText += `Customer: ${customerData.firstName} ${customerData.lastName}\n`;
+    logText += `Email: ${customerData.email}\n`;
+    logText += `Business: ${customerData.businessName}\n`;
+    logText += `Industry: ${customerData.industry}\n`;
+    logText += `Email Rate: ${customerData.emailRate}\n`;
+    logText += `Phone: ${customerData.phone || "Not provided"}\n`;
+    logText += `Business Type: ${customerData.businessType}\n`;
+    
+    if (customerData.businessType === "product") {
+        logText += `Products: ${tempProducts.join(", ") || "None"}\n`;
+    } else {
+        logText += `Services: ${tempServices.join(", ") || "None"}\n`;
+    }
+    logText += `Extra Emails: ${tempEmails.join(", ") || "None"}\n`;
+    logText += "=".repeat(50) + "\n\n";
+    logText += "FULL CONVERSATION LOG:\n";
+    logText += "=".repeat(50) + "\n";
+    
+    for (let msg of conversationLog) {
+        let time = new Date(msg.timestamp).toLocaleTimeString();
+        logText += `[${time}] ${msg.speaker}: ${msg.message}\n`;
+    }
+    
+    // Send via email using a simple mailto (opens email client)
+    let subject = encodeURIComponent(`New AI Agent Sale - ${customerData.firstName} ${customerData.lastName}`);
+    let body = encodeURIComponent(logText);
+    window.location.href = `mailto:${YOUR_EMAIL}?subject=${subject}&body=${body}`;
+    
+    // Also save to localStorage
+    let allData = {
+        customer: customerData,
+        products: tempProducts,
+        services: tempServices,
+        extraEmails: tempEmails,
+        conversation: conversationLog,
+        timestamp: new Date().toISOString()
+    };
+    localStorage.setItem('avaCustomerData', JSON.stringify(allData));
+    
+    return "📧 A copy of our conversation has been emailed to our support team. We'll be in touch shortly!";
+}
+
+// =============================================
+// CONVERSATION FLOW
+// =============================================
 function processMessage(i) {
-    // Reset command
-    if (i.includes('start over')) {
+    if (i === 'start over') {
         reset();
         return "Let's start over! What's your first name?";
     }
     
-    // FAQ
     if (i.includes('what is') || i.includes('how much') || i.includes('features')) {
         return "Our AI agent is a Python script that automates customer service, handles emails, scrapes leads, and generates tickets. One-time payment of £99, no subscription. Type 'yes' to buy!";
     }
     
-    // Main conversation flow
     if (step === "greeting") {
         customerData.firstName = i;
         step = "lastName";
@@ -181,7 +254,6 @@ function processMessage(i) {
         return "Does your business sell products or offer services? (type 'product' or 'service')";
     }
     
-    // BUSINESS TYPE - CHOOSE ONE PATH
     if (step === "businessType") {
         if (i === 'product') {
             customerData.businessType = 'product';
@@ -195,12 +267,8 @@ function processMessage(i) {
         return "Please type 'product' or 'service'.";
     }
     
-    // PRODUCTS PATH (only if businessType = product)
     if (step === "products") {
         if (i === 'done' || i === 'none') {
-            if (tempProducts.length === 0 && i === 'none') {
-                addMessage("No products added. That's fine!", false);
-            }
             step = "extraEmails";
             return "Any additional email addresses for your campaign? Type them one per line, or type 'skip' if none.";
         }
@@ -208,12 +276,8 @@ function processMessage(i) {
         return `Added "${i}". Add another product or type 'done'.`;
     }
     
-    // SERVICES PATH (only if businessType = service)
     if (step === "services") {
         if (i === 'done' || i === 'none') {
-            if (tempServices.length === 0 && i === 'none') {
-                addMessage("No services added. That's fine!", false);
-            }
             step = "extraEmails";
             return "Any additional email addresses for your campaign? Type them one per line, or type 'skip' if none.";
         }
@@ -221,7 +285,6 @@ function processMessage(i) {
         return `Added "${i}". Add another service or type 'done'.`;
     }
     
-    // EXTRA EMAILS
     if (step === "extraEmails") {
         if (i === 'skip' || i === 'done') {
             step = "payment";
@@ -231,17 +294,10 @@ function processMessage(i) {
         return `Added "${i}". Add another email or type 'done'.`;
     }
     
-    // PAYMENT
     if (step === "payment" && (i === 'yes' || i === 'y')) {
-        // Save all data
-        const allData = {
-            ...customerData,
-            products: tempProducts,
-            services: tempServices,
-            extraEmails: tempEmails
-        };
-        localStorage.setItem('avaCustomerData', JSON.stringify(allData));
-        return "🎉 Perfect! Here's your payment link: https://buy.stripe.com/3cI9AUgyv7rF1jr2rVabK1b\n\nAfter payment, your custom script will be emailed to " + customerData.email + ".\n\nThank you for choosing Ava! 💜";
+        // Send email with chat log
+        let emailResult = sendChatLog();
+        return `🎉 Perfect! Here's your payment link: ${STRIPE_LINK}\n\nAfter payment, we'll email your custom script to ${customerData.email}.\n\n${emailResult}\n\nThank you for choosing Ava! 💜`;
     }
     
     return "Type 'start over' to begin again, or ask me about the software!";
@@ -256,6 +312,7 @@ function reset() {
     tempProducts = [];
     tempServices = [];
     tempEmails = [];
+    conversationLog = [];
     document.getElementById('messages').innerHTML = '';
     addMessage("Hello! I'm Ava. I can help you purchase our AI agent software for £99. What's your first name?", false);
 }
