@@ -70,3 +70,13 @@ That's it! Ava will start sending emails to your leads automatically.
 • The Carnets screen may freeze during breaks — this is NORMAL Ava still running
 
 Ava runs in the background. Trust your Sent folder, not the carnets screen. 🙏
+
+⚠️ CARNETS GETTING STUCK?
+
+If Carnets freezes or stops responding:
+1. Double tap home (or swipe up) to close Carnets completely
+2. Turn on WiFi or check your connection
+3. Open Carnets again
+4. Tap Run
+
+Bad WiFi can cause Carnets to freeze. Just restart and try again.
