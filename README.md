@@ -62,3 +62,11 @@ Example:
 • leads.csv must have the 4 columns: Name,Email,Industry,Town
 
 That's it! Ava will start sending emails to your leads automatically.
+
+✅ HOW TO KNOW AVA IS WORKING
+
+• Check your Gmail "Sent" folder — emails will appear as there sent with timestamp
+• You'll get popup email notifications when emails bounce wrong address
+• The Carnets screen may freeze during breaks — this is NORMAL Ava still running
+
+Ava runs in the background. Trust your Sent folder, not the carnets screen. 🙏
